@@ -1,6 +1,21 @@
-import React from "react";
+import { useEffect, useState } from 'react';
+import "./autocomplete.css"
+const Autocomplete = ({ url }) => {
+    const [items, setItems] = useState([]);
+    const [initialItems, setInitialItems] = useState([]);
+    const [value, setValue] = useState("");
 
-const Autocomplete = ({ suggestions, getSuggestions, value }) => {
+    useEffect(() => {
+        const fetchItems = async () => {
+            const response = await fetch(url);
+            const data = await response.json();
+            setItems(data);
+            setInitialItems(data)
+        };
+
+        fetchItems();
+    }, []);
+
     const highlightMatches = (suggestion) => {
         const regex = new RegExp(`(${value})`, "i");
         if (value !== '')
@@ -10,22 +25,29 @@ const Autocomplete = ({ suggestions, getSuggestions, value }) => {
     return (
         <div>
             <input
+                className='autocomplete-input'
                 type="text"
                 value={value}
-                onChange={e => getSuggestions(e.target.value)}
-            />
-            {suggestions.length ? (<ul>
-                {suggestions.map(suggestion => (
-                    <li key={suggestion.id} onClick={() => getSuggestions(suggestion.value)}>
-                        <div dangerouslySetInnerHTML={{
-                            __html: `
-                            ${highlightMatches(suggestion.value)}
-` }} />
+                placeholder="Search"
+                onChange={(event) => {
+                    console.log(event.target.value)
+                    setValue(event.target.value);
+                    value !== '' ? setItems(initialItems.filter((item) => {
+                        return item.name.toLowerCase().includes(value.toLowerCase());
+                    })) :
+                        setItems(initialItems);
 
+                }}
+            />
+            {items.length ? <ul className='list'>
+                {items.map((item) => (
+                    <li className="list-item" key={item.id} onClick={() => setValue(item.name)}>  <div dangerouslySetInnerHTML={{
+                        __html: `
+                        ${highlightMatches(item.name)}
+` }} />
                     </li>
                 ))}
-            </ul>) : <p>No results found</p>}
-
+            </ul> : <ul className='list'><li className='no-records'>No results found</li></ul>}
         </div>
     );
 };
